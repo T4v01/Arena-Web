@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Arena Web — Combate 3D</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/css/style.css" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "/vendor/three/three.module.js",
+    "three/addons/loaders/GLTFLoader.js": "/vendor/three/examples/jsm/loaders/GLTFLoader.js",
+    "three/addons/loaders/FBXLoader.js": "/vendor/three/examples/jsm/loaders/FBXLoader.js",
+    "three/addons/loaders/RGBELoader.js": "/vendor/three/examples/jsm/loaders/RGBELoader.js",
+    "three/addons/libs/fflate.module.js": "/vendor/three/examples/jsm/libs/fflate.module.js",
+    "three/addons/curves/NURBSCurve.js": "/vendor/three/examples/jsm/curves/NURBSCurve.js",
+    "three/addons/curves/NURBSUtils.js": "/vendor/three/examples/jsm/curves/NURBSUtils.js",
+    "three/addons/utils/BufferGeometryUtils.js": "/vendor/three/examples/jsm/utils/BufferGeometryUtils.js",
+    "three/addons/utils/SkeletonUtils.js": "/vendor/three/examples/jsm/utils/SkeletonUtils.js"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<!-- ===== Carga ===== -->
+<div id="loadingScreen" class="overlay">
+  <h1>ARENA WEB</h1>
+  <p id="loadingText">Cargando recursos…</p>
+  <div class="loadbar"><div id="loadbarFill"></div></div>
+</div>
+
+<!-- ===== Lobby: crear o unirse a sala ===== -->
+<div id="lobbyScreen" class="overlay hidden">
+  <h1>Sala de combate</h1>
+  <div class="lobbyBox">
+    <button id="createRoomBtn" class="bigBtn">CREAR SALA NUEVA</button>
+    <div class="orDivider">o</div>
+    <input id="roomCodeInput" maxlength="5" placeholder="CÓDIGO DE SALA" style="text-transform:uppercase" />
+    <button id="joinRoomBtn" class="bigBtn">UNIRSE A SALA</button>
+  </div>
+  <p id="lobbyMsg"></p>
+</div>
+
+<!-- ===== Codigo de sala creado ===== -->
+<div id="roomCreatedScreen" class="overlay hidden">
+  <h1>¡Sala creada!</h1>
+  <p>Comparte este código con hasta 4 jugadores más:</p>
+  <div id="roomCodeDisplay"></div>
+  <button id="continueToClassBtn" class="bigBtn">CONTINUAR</button>
+</div>
+
+<!-- ===== Seleccion de clase ===== -->
+<div id="classScreen" class="overlay hidden">
+  <h1>Elige tu clase</h1>
+  <input id="nameInput" maxlength="16" placeholder="Tu nombre" />
+  <div class="classGrid">
+    <div class="classCard" data-class="warrior">
+      <div class="classIcon warrior">⚔</div>
+      <h2>Guerrero</h2>
+      <p>Alta vida, golpes contundentes cuerpo a cuerpo.</p>
+      <ul><li>HP: 160</li><li>Daño: Alto</li><li>Velocidad: Media</li></ul>
+      <div class="abilityPreview">
+        <span>1. Golpe Giratorio</span><span>2. Grito de Guerra</span><span>3. Bloqueo de Escudo</span><span>4. Estocada</span>
+      </div>
+    </div>
+    <div class="classCard" data-class="rogue">
+      <div class="classIcon rogue">🗡</div>
+      <h2>Asesino</h2>
+      <p>Rápido y letal, ataques veloces, baja resistencia.</p>
+      <ul><li>HP: 105</li><li>Daño: Medio</li><li>Velocidad: Alta</li></ul>
+      <div class="abilityPreview">
+        <span>1. Ráfaga de Cuchillas</span><span>2. Sombra</span><span>3. Veneno</span><span>4. Golpe Certero</span>
+      </div>
+    </div>
+    <div class="classCard" data-class="mage">
+      <div class="classIcon mage">✦</div>
+      <h2>Mago</h2>
+      <p>Ataques a distancia con hechizos elementales.</p>
+      <ul><li>HP: 75</li><li>Daño: Medio-alto</li><li>Alcance: Largo</li></ul>
+      <div class="abilityPreview">
+        <span>1. Lanza de Hielo</span><span>2. Bola de Fuego</span><span>3. Parpadeo</span><span>4. Nova de Escarcha</span>
+      </div>
+    </div>
+    <div class="classCard" data-class="ranger">
+      <div class="classIcon ranger">➶</div>
+      <h2>Arquero</h2>
+      <p>Daño físico a distancia, rápido y preciso.</p>
+      <ul><li>HP: 95</li><li>Daño: Medio</li><li>Alcance: Muy largo</li></ul>
+      <div class="abilityPreview">
+        <span>1. Disparo Múltiple</span><span>2. Trampa</span><span>3. Retirada</span><span>4. Disparo Certero</span>
+      </div>
+    </div>
+    <div class="classCard" data-class="cleric">
+      <div class="classIcon cleric">✝</div>
+      <h2>Clérigo</h2>
+      <p>Resistente, puede curarse y protegerse.</p>
+      <ul><li>HP: 120</li><li>Daño: Medio</li><li>Soporte propio</li></ul>
+      <div class="abilityPreview">
+        <span>1. Golpe Sagrado</span><span>2. Curación</span><span>3. Campo Sagrado</span><span>4. Rayo Sagrado</span>
+      </div>
+    </div>
+  </div>
+  <button id="joinBtn" disabled>ENTRAR A LA ARENA</button>
+  <label id="invertLookLabel"><input type="checkbox" id="invertLookCheckbox" /> Invertir cámara horizontal (si el giro se siente al revés)</label>
+  <p id="joinMsg"></p>
+</div>
+
+<!-- ===== HUD ===== -->
+<div id="hud" class="hidden">
+  <div id="topBar">
+    <div id="roomBadge"></div>
+    <div id="matchStatus">Esperando jugadores…</div>
+    <div id="matchTimer">--:--</div>
+  </div>
+
+  <div id="healthWrap">
+    <div id="healthBarFill"></div>
+    <span id="healthText">100/100</span>
+  </div>
+  <div id="classLabel"></div>
+  <div id="xpWrap">
+    <span id="levelLabel">Nv. 1</span>
+    <div id="xpBarOuter"><div id="xpBarFill"></div></div>
+    <span id="xpText">0/90 XP</span>
+  </div>
+  <div id="levelUpFlash" class="hidden"></div>
+
+  <div id="abilityBar">
+    <div class="abilitySlot" data-slot="1"><div class="abilityCd"></div><span class="abilityKey">1</span><span class="abilityName"></span></div>
+    <div class="abilitySlot" data-slot="2"><div class="abilityCd"></div><span class="abilityKey">2</span><span class="abilityName"></span></div>
+    <div class="abilitySlot" data-slot="3"><div class="abilityCd"></div><span class="abilityKey">3</span><span class="abilityName"></span></div>
+    <div class="abilitySlot" data-slot="4"><div class="abilityCd"></div><span class="abilityKey">4</span><span class="abilityName"></span></div>
+  </div>
+
+  <div id="scoreboard"><h3>Marcador</h3><ol id="scoreList"></ol></div>
+
+  <div id="crosshair">+</div>
+  <div id="lockHint">Click para activar cámara libre</div>
+
+  <div id="killFeed"></div>
+
+  <div id="controlsHelp">
+    WASD moverte · Espacio saltar · Mouse mirar · Click atacar · 1/2/3 habilidades
+  </div>
+</div>
+
+<!-- ===== Victoria ===== -->
+<div id="victoryScreen" class="overlay hidden">
+  <h1 id="victoryTitle">¡Fin de la partida!</h1>
+  <div id="victoryWinner"></div>
+  <ol id="victoryBoard"></ol>
+  <p id="victoryNote">Reiniciando partida en unos segundos…</p>
+</div>
+
+<div id="deathScreen" class="overlay hidden">
+  <h1>Has caído</h1>
+  <p id="deathRespawn">Reapareces en 3…</p>
+</div>
+
+<audio id="musicMenu" src="/assets/music/menu.mp3" loop></audio>
+<audio id="musicBattle1" src="/assets/music/battle1.mp3" loop></audio>
+<audio id="musicBattle2" src="/assets/music/battle2.mp3" loop></audio>
+
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="/js/game.js"></script>
+</body>
+</html>
